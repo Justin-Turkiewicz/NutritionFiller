@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:nutrtionfiller/model/food.dart';
 import 'package:nutrtionfiller/model/user.dart';
@@ -17,30 +19,43 @@ class _HomeState extends State<Home> {
   List<double> percentages = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
   List<double> emptyValues = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
   List<double> emptyPercentages = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+  List<double> lastFoodValues = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
   late User user;
   final int amountOfNutritionValues = 21;
   final List<double> dailyValuePercentages = [2000.0, 78.0, 20.0, 300.0, 2300.0, 4700.0, 275.0, 28.0, 50.0, 50.0, 1300.0, 18.0, 11.0, 420.0, 1250.0, 900.0, 1.7, 2.4, 90.0, 15.0, 120.0];
+  Queue<Food> lastFoodQueue = Queue<Food>();
+  Queue<Food> foodAddedQueue = Queue<Food>();
   void retrieveData() async{
     dynamic foodAdded = await Navigator.pushNamed(context, '/add_food');
       setState(() {
       userData = {
         'nutritionValues': foodAdded['nutritionValues'],
-        'lastFoodValues': foodAdded['lastFoodValues'],
+        'foodAdded': foodAdded['foodAdded']
       };
+      foodAddedQueue = userData['nutritionValues'];
       if(foodAdded['nutritionValues'] != null) {
         editValues();
       }
       });
   }
 
-  void editValues(){
-    for(int index=0;index<amountOfNutritionValues;index++){
-      user.getTotalNutrition()[index] += userData['nutritionValues'][index];
-      user.getPercentages()[index] = (user.getTotalNutrition()[index]/dailyValuePercentages[index]);
-      user.getTotalNutrition()[index] = double.parse((user.getTotalNutrition()[index]).toStringAsFixed(1));
-      user.getPercentages()[index] = double.parse((user.getPercentages()[index]).toStringAsFixed(2));
+  void editValues() {
+    int foodIndex = 0;
+    while (foodAddedQueue.isNotEmpty) {
+      lastFoodQueue.add(foodAddedQueue.removeLast());
+      for (int index = 0; index < amountOfNutritionValues; index++) {
+        user.getTotalNutrition()[index] += lastFoodQueue
+            .elementAt(foodIndex)
+            .nutritionValues[index];
+        user.getPercentages()[index] =
+        (user.getTotalNutrition()[index] / dailyValuePercentages[index]);
+        user.getTotalNutrition()[index] =
+            double.parse((user.getTotalNutrition()[index]).toStringAsFixed(1));
+        user.getPercentages()[index] =
+            double.parse((user.getPercentages()[index]).toStringAsFixed(2));
+      }
+      foodIndex++;
     }
-
   }
   @override
   void initState() {
@@ -49,18 +64,25 @@ class _HomeState extends State<Home> {
   }
 
   void removeLastFood() {
-    for(int index=0;index<amountOfNutritionValues;index++){
-      user.totalNutrition[index] -= userData['lastFoodValues'][index];
-      user.getPercentages()[index] = (user.getTotalNutrition()[index]/dailyValuePercentages[index]);
-      if(user.totalNutrition[index] < 0){
-        user.totalNutrition[index] = 0.0;
-        user.getPercentages()[index] = 0.0;
-      }
-      else{
-        user.getTotalNutrition()[index] = double.parse((user.getTotalNutrition()[index]).toStringAsFixed(1));
-        user.getPercentages()[index] = double.parse((user.getPercentages()[index]).toStringAsFixed(2));
+    if(lastFoodQueue.isNotEmpty) {
+      Food lastFood = lastFoodQueue.removeFirst();
+      for (int index = 0; index < amountOfNutritionValues; index++) {
+        user.totalNutrition[index] -= lastFood.nutritionValues[index];
+        user.getPercentages()[index] =
+        (user.getTotalNutrition()[index] / dailyValuePercentages[index]);
+        if (user.totalNutrition[index] < 0) {
+          user.totalNutrition[index] = 0.0;
+          user.getPercentages()[index] = 0.0;
+        }
+        else {
+          user.getTotalNutrition()[index] = double.parse(
+              (user.getTotalNutrition()[index]).toStringAsFixed(1));
+          user.getPercentages()[index] =
+              double.parse((user.getPercentages()[index]).toStringAsFixed(2));
+        }
       }
     }
+
   }
   @override
   Widget build(BuildContext context) {
@@ -94,6 +116,7 @@ class _HomeState extends State<Home> {
                 return IconButton(onPressed: () {
                   setState(() {
                     removeLastFood();
+
                   });
                 }, icon: Text('Remove Last Food', style: TextStyle(fontSize: 13),),);
               }),

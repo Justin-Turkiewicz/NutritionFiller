@@ -25,6 +25,14 @@ class Food{
 
   Food({this.id, required this.name, required this.imageUrl, required this.nutritionValues});
 
+  factory Food.clone(Food aFood){
+    return new Food(
+        id: aFood.id,
+        name: aFood.name,
+        imageUrl: aFood.imageUrl,
+        nutritionValues: aFood.nutritionValues.toList());
+  }
+
   Food.fromMap(dynamic obj){
     this.id = obj['id'];
     this.name = obj['name'];

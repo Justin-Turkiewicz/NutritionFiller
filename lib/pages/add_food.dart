@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:io';
 import 'dart:ui';
 import 'package:nutrtionfiller/db/food_database.dart';
@@ -20,8 +21,6 @@ class _Add_FoodState extends State<Add_Food> {
   ];
   List<String> nutritionNames = ['Calories', 'Total Fat', 'Saturated Fat', 'Cholesterol', 'Sodium', 'Potassium', 'Carbohydrate', 'Dietary Fiber', 'Sugar', 'Protein', 'Calcium', 'Iron', 'Zinc', 'Magnesium', 'Phosphorus', 'Vitamin A', 'Vitamin B-6', 'Vitamin B-12', 'Vitamin C', 'Vitamin E', 'Vitamin K'];
   List<String> nutritionUnits = ['cal', 'g', 'g', 'mg', 'mg', 'mg', 'g', 'g', 'g', 'g', 'mg', 'mg', 'mg', 'mg', 'mg', 'mcg', 'mg', 'mcg', 'mg', 'mg', 'mcg'];
-  List<double> allFoodValues = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
-  List<double> lastFoodValues = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
   late double amount;
   bool foodAdded = false;
   late Food food;
@@ -31,12 +30,13 @@ class _Add_FoodState extends State<Add_Food> {
   late Database database;
   List<Food> foodList = [];
   Food? selectedFood = null;
-
+  Queue<Food> allAddedFood = Queue<Food>();
   @override
   void initState() {
     getFoodList();
     super.initState();
-    food = Food(name: 'Brocolli', imageUrl: 'brocolli.jpg', nutritionValues: nutritionValues[0]);
+    food = Food(name: 'Broccoli', imageUrl: 'broccoli.jpg', nutritionValues: nutritionValues[0]);
+    allAddedFood.clear();
 
   }
 
@@ -52,26 +52,22 @@ class _Add_FoodState extends State<Add_Food> {
   }
 
   void multiply(@required double amount) {
-      for(int index=0;index < amountOfNutritionValues;index++ ){
-          lastFoodValues[index] = 0.0;
-          allFoodValues[index] += (food.getNutritionValues()[index]*amount);
-          lastFoodValues[index] = food.getNutritionValues()[index]*amount;
+    Food foodToBeAdded = Food.clone(food);
+    print(foodToBeAdded.toString());
+      for(int index=0;index < amountOfNutritionValues;index++){
+          foodToBeAdded.nutritionValues[index] *= amount;
       }
+      print(foodToBeAdded.toString());
+      allAddedFood.add(foodToBeAdded);
       foodAdded = true;
 
   }
   void addFood(){
-      if(foodAdded) {
         Navigator.pop(context, {
-          'nutritionValues': allFoodValues,
-          'lastFoodValues': lastFoodValues
+          'nutritionValues': allAddedFood,
+          'foodAdded': foodAdded
         });
-      }
-      else{
-        Navigator.pop(context, {
 
-        });
-      }
   }
   Future alert(BuildContext context){
     return showDialog(context: context, builder: (BuildContext context)
@@ -125,14 +121,25 @@ class _Add_FoodState extends State<Add_Food> {
                       children: <Widget>[
                         Row(
                         children: <Widget>[
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(0.0, 0.0, 200.0, 0.0),
-                            child: Text(food.getName(), style: TextStyle(color: Colors.grey[900], fontSize: 30, fontFamily: 'CormorantGaramond'),),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(0.0, 25.0, 0.0, 0.0),
+                              child: Container(
+                                  width: 275,
+                                  height: 60,
+                                  child: Text(
+                                    food.getName(),
+                                    style: TextStyle(color: Colors.grey[900], fontSize: 30, fontFamily: 'CormorantGaramond'),
+                                  )
+                              ),
+                            ),
+
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(0.0, 25.0, 0.0, 0.0),
+                          child: Container(
+                            height: 60,
+                            width: 100,
+                            child: Image.asset('assets/images/${food.imageUrl}', height:60, width: 100, fit: BoxFit.fitHeight,),
                           ),
-                        Container(
-                          height: 100,
-                          width: 100,
-                          child: Image.asset('assets/images/${food.imageUrl}'),
                         ),],
                         ),
                          for(int index=0; index < amountOfNutritionValues;index++)
@@ -178,19 +185,3 @@ class _Add_FoodState extends State<Add_Food> {
 
   }
 }
-// title: Container(
-//   width: MediaQuery.of(context).size.width - 100.0,
-//   child: TextField(
-//     decoration: InputDecoration(
-//       hintText: 'Search Foods'
-//     ),
-//     onChanged: (String text) async {
-//       database = await foodDatabase.database;
-//       List<Map> searchedFoods = await database.rawQuery(
-//           "SELECT * FROM foods WHERE name LIKE '%${text}%'");
-//       print(searchedFoods);
-//     },
-//   ),
-//
-//
-// ),

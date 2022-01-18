@@ -7,12 +7,25 @@ import 'package:sqflite/sqflite.dart';
 import 'package:nutrtionfiller/model/food.dart';
 import 'package:path/path.dart';
 import 'package:sqfentity/sqfentity.dart';
+/*
+  FoodDatabase is used to store the food database based on the food objects
+ */
 class FoodDatabase {
+  /*
+    instance Is instantiated right away
+    _database Is used to retrieve the food database when needed
+   */
   static final FoodDatabase instance = FoodDatabase._init();
   static Database? _database;
-
+  /*
+    Instantiates the Food Database object
+   */
   FoodDatabase._init();
 
+  /*
+    On creation of FoodDatabase object, _database is set via the openDB method.
+    Otherwise _database is returned
+   */
   Future<Database> get database async{
     if(_database != null) return _database!;
 
@@ -20,11 +33,15 @@ class FoodDatabase {
     return _database!;
   }
 
-
+  /*
+    Finds the database and returns it
+   */
   Future<Database> openDB() async {
+    // Gets the database's path and make sure it exists on computer
     String dbPath = await getDatabasesPath();
     String path = join(dbPath, 'foods.db');
     bool exists = await databaseExists(path);
+    //If it does not exist creates database for computer at that path and loads data
     if(!exists) {
       await Directory(dirname(path)).create(recursive: true);
       ByteData data = await rootBundle.load(join('assets','foods.db'));
@@ -32,26 +49,35 @@ class FoodDatabase {
           data.offsetInBytes, data.lengthInBytes);
       await File(path).writeAsBytes(bytes, flush: true);
     }
+    //Calls initDB to make path for database on device
     await initDB();
+    // Opens the database provided at the path on computer
     Database db = await openDatabase(path, readOnly: true);
-
     return db;
   }
 
   Future<void> initDB() async {
+    //Gets path for documents directory on device and joins that path with foods.db
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     String newPath = join(documentsDirectory.path, 'foods.db');
+    //Checks if that path already exists
     final exist = await databaseExists(newPath);
+    /*
+      If the file does not exist locally on the device, it gets the file's path
+      from the installed app's files and then copies and pastes the file
+      to the device's path
+     */
     if (!exist) {
-      try {
         final dbPath = await ExternalPath.getExternalStoragePublicDirectory(
             ExternalPath.DIRECTORY_DOCUMENTS);
         final path = join(dbPath, 'foods.db');
         File(path).copySync(newPath);
-      } catch (_) {}
     }
   }
 
+  /*
+    Searches for food in the database. Not used currently
+   */
   Future<List<Food>?> searchFood(String userInput) async {
     final db = await _database;
     List<Map<String, Object?>>? rows = await db?.query(
@@ -61,27 +87,9 @@ class FoodDatabase {
 
   }
 
-
-  // Future<Database> _initDB(String filePath) async{
-  //   final dbPath = await getDatabasesPath();
-  //   final path = join(dbPath, filePath);
-  //   return await openDatabase(path, version: 1, onCreate: _createDB);
-  // }
-
-  // Future _createDB(Database db, int version) async{
-  //   final idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
-  //   final textType = 'TEXT NOT NULL';
-  //   await db.execute('''
-  //     CREATE TABLE $tableFoods (
-  //       ${FoodFields.id} $idType,
-  //       ${FoodFields.name} $textType,
-  //       ${FoodFields.imageUrl} $textType,
-  //       ${FoodFields.nutritionValues} $textType
-  //
-  //     )
-  //   ''');
-  // }
-
+  /*
+    Creates a food object from database. Not used currently
+   */
   Future<Food> create(Food food) async{
     final db = await instance.database;
 
@@ -89,6 +97,9 @@ class FoodDatabase {
     return food.copy(id: id);
   }
 
+  /*
+    Returns food from database. Not used currently
+   */
   Future<Food> readFood(int id) async{
     final db = await instance.database;
 
@@ -107,6 +118,10 @@ class FoodDatabase {
     }
   }
 
+
+  /*
+    Returns list of all the food objects in the database
+   */
   Future<List<Food>> readAllFoods() async{
     final db = await instance.database;
 
@@ -116,6 +131,9 @@ class FoodDatabase {
     return result.map((json) => Food.fromJson(json)).toList();
   }
 
+  /*
+    Updates database with a new Food object. Not used currently.
+   */
   Future<int> update(Food food) async {
     final db = await instance.database;
 
@@ -126,6 +144,9 @@ class FoodDatabase {
         whereArgs: [food.id],);
   }
 
+  /*
+    Deletes a Food object from database. Not used currently.
+   */
   Future<int> delete(int id) async{
     final db = await instance.database;
 
@@ -136,6 +157,9 @@ class FoodDatabase {
     );
   }
 
+  /*
+    Closes the database. Not used currently.
+   */
   Future close() async {
     final db = await instance.database;
     db.close();

@@ -1,16 +1,28 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
-
 import 'food.dart';
 
+/*
+ FoodSearchDelegate class is used for the search function
+ */
 class FoodSearchDelegate extends SearchDelegate {
+  /*
+    allFoods Contains all the possible foods in the database
+    suggestedFoods Contains the suggested foods based on what user typed
+    resultFood Is the Food the user selected
+   */
   final List<Food> allFoods;
   final List<Food> suggestedFoods;
   late Food resultFood;
 
+  /*
+    Constructor
+   */
   FoodSearchDelegate({required this.allFoods, required this.suggestedFoods});
 
+  /*
+    Makes the clear button to remove the user's text input
+   */
   @override
   List<Widget> buildActions(BuildContext context) {
     return [
@@ -23,6 +35,9 @@ class FoodSearchDelegate extends SearchDelegate {
     ];
   }
 
+  /*
+    Makes the back button to allow the user to exit the search delegate
+   */
   @override
   Widget buildLeading(BuildContext context) {
     return
@@ -35,6 +50,9 @@ class FoodSearchDelegate extends SearchDelegate {
     ;
   }
 
+  /*
+    Gets the results after the user has submitted a text input
+   */
   @override
   Widget buildResults(BuildContext context) {
     final List<Food> allResults = allFoods.where((food) =>
@@ -52,6 +70,9 @@ class FoodSearchDelegate extends SearchDelegate {
             ));
   }
 
+  /*
+    Updates the suggestions to the user based on their text input
+   */
   @override
   Widget buildSuggestions(BuildContext context) {
     final List<Food> allSuggestions = suggestedFoods.where((food) =>

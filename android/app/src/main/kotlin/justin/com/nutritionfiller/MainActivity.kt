@@ -1,4 +1,4 @@
-package justin.com.nutrtionfiller
+package justin.com.nutritionfiller
 
 import io.flutter.embedding.android.FlutterActivity
 

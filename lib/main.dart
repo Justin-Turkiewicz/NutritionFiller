@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:nutrtionfiller/pages/add_food.dart';
-import 'package:nutrtionfiller/pages/home.dart';
+import 'package:nutritionfiller/pages/add_food.dart';
+import 'package:nutritionfiller/pages/home.dart';
 /*
     This application allows the user to track their intake based on many nutrition
     categories and see their progress. User has basic functionality of adding foods

@@ -4,7 +4,7 @@ import 'package:external_path/external_path.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:nutrtionfiller/model/food.dart';
+import 'package:nutritionfiller/model/food.dart';
 import 'package:path/path.dart';
 import 'package:sqfentity/sqfentity.dart';
 /*
@@ -42,15 +42,15 @@ class FoodDatabase {
     String path = join(dbPath, 'foods.db');
     bool exists = await databaseExists(path);
     //If it does not exist creates database for computer at that path and loads data
-    if(!exists) {
-      await Directory(dirname(path)).create(recursive: true);
+    //if(!exists) {
+    //  await Directory(dirname(path)).create(recursive: true);
       ByteData data = await rootBundle.load(join('assets','foods.db'));
       List<int> bytes = data.buffer.asUint8List(
           data.offsetInBytes, data.lengthInBytes);
       await File(path).writeAsBytes(bytes, flush: true);
-    }
+   // }
     //Calls initDB to make path for database on device
-    await initDB();
+    //await initDB();
     // Opens the database provided at the path on computer
     Database db = await openDatabase(path, readOnly: true);
     return db;
@@ -127,8 +127,8 @@ class FoodDatabase {
 
     final orderBy = '${FoodFields.name} ASC';
     final result = await db.query(tableFoods, orderBy: orderBy);
-
-    return result.map((json) => Food.fromJson(json)).toList();
+    final test = result.map((json) => Food.fromJson(json)).toList();
+    return test;
   }
 
   /*

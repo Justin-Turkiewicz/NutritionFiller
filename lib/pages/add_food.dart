@@ -1,11 +1,14 @@
 import 'dart:collection';
 import 'dart:io';
 import 'dart:ui';
-import 'package:nutrtionfiller/db/food_database.dart';
-import 'package:nutrtionfiller/model/FoodSearchDelegate.dart';
-import 'package:nutrtionfiller/model/food.dart';
+import 'package:nutritionfiller/db/food_database.dart';
+import 'package:nutritionfiller/model/FoodSearchDelegate.dart';
+import 'package:nutritionfiller/model/food.dart';
 import 'package:flutter/material.dart';
+import 'package:nutritionfiller/model/size_config.dart';
+import 'package:nutritionfiller/model/user.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:provider/provider.dart';
 /*
   This page allows the user to view the nutrition facts for particular
   foods and add food to their intake based on a serving size by cups
@@ -39,27 +42,38 @@ class _Add_FoodState extends State<Add_Food> {
   final addController = TextEditingController();
   late Database database;
   List<Food> foodList = [];
-  Food? selectedFood = null;
   Queue<Food> allAddedFood = Queue<Food>();
+  Future<String>? finished;
+  Food? selectedFood;
+  bool searched = false;
   /*
     Makes sure foodList is populated, initial food to be displayed to Broccoli and
     allAddedFood queue is clear
    */
   @override
   void initState() {
-    getFoodList();
     super.initState();
-    food = Food(name: 'Broccoli', imageUrl: 'broccoli.jpg', nutritionValues: foodList[0].nutritionValues);
-    allAddedFood.clear();
+    getFoodList().whenComplete(() {
+      // food = Food(name: foodList[0].name,
+      //     imageUrl: foodList[0].imageUrl,
+      //     nutritionValues: foodList[0].nutritionValues);
+      allAddedFood.clear();
+    } );
+    finished = doneLoading();
+
+
+
   }
 
   /*
     Populates foodList
    */
-  void getFoodList() async{
+  Future<void> getFoodList() async{
     foodList = await foodDatabase.readAllFoods();
   }
-
+  Future<String> doneLoading() async{
+    return "done";
+  }
 
   @override
   /*
@@ -77,11 +91,9 @@ class _Add_FoodState extends State<Add_Food> {
    */
   void addFood(@required double amount) {
     Food foodToBeAdded = Food.clone(food);
-    print(foodToBeAdded.toString());
       for(int index=0;index < amountOfNutritionValues;index++){
           foodToBeAdded.nutritionValues[index] *= amount;
       }
-      print(foodToBeAdded.toString());
       allAddedFood.add(foodToBeAdded);
 
   }
@@ -91,6 +103,7 @@ class _Add_FoodState extends State<Add_Food> {
   void sendToHome(){
         Navigator.pop(context, {
           'nutritionValues': allAddedFood,
+          'lastFoodAdded': selectedFood,
         });
 
   }
@@ -115,11 +128,20 @@ class _Add_FoodState extends State<Add_Food> {
     });
   }
 
+  void searchedTrue(){
+    searched = true;
+  }
   @override
   /*
     Builds page
    */
   Widget build(BuildContext context) {
+    if(!searched) {
+      final setFood = ModalRoute.of(context)?.settings.arguments as Map<String, Food>;
+      selectedFood = setFood['lastFoodAdded'] as Food;
+      food = selectedFood!;
+    }
+    SizeConfig().init(context);
     return Scaffold(
       /*
         appBar displays title and contains search function. Also allows user to
@@ -141,8 +163,11 @@ class _Add_FoodState extends State<Add_Food> {
                   final result = await showSearch(context: context, delegate: FoodSearchDelegate(allFoods: foodList,
                   suggestedFoods: foodList));
                   setState(() {
-                    selectedFood = result;
-                    food = selectedFood!;
+                    searchedTrue();
+                    if(!(result is String)) {
+                      selectedFood = result;
+
+                    }
                   });
                 },
               )
@@ -151,87 +176,128 @@ class _Add_FoodState extends State<Add_Food> {
           /*
             Builds body of page. Scrollable
            */
-          body: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 0.0),
-              child: Container(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Row(
+          body: FutureBuilder(
+            initialData: food = selectedFood!,
+            future: finished,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                food = selectedFood!;
+                return SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 0.0),
+                    child: Container(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          /*
-                            Formats the food name
-                           */
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(0.0, 25.0, 0.0, 0.0),
-                              child: Container(
-                                  width: 275,
-                                  height: 60,
-                                  child: Text(
-                                    food.getName(),
-                                    style: TextStyle(color: Colors.grey[900], fontSize: 30, fontFamily: 'CormorantGaramond'),
-                                  )
+                          Row(
+                            children: <Widget>[
+                              /*
+                                Formats the food name
+                               */
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                    0.0, 10.0, 0.0, 0.0),
+                                child: Container(
+                                    width: SizeConfig.screenWidth!*1/1.5,
+                                    height: SizeConfig.screenHeight!*1/23,
+                                    child: Builder(
+                                        builder: (context) {
+                                          return Text(
+                                            food.getName(),
+                                            style: TextStyle(
+                                                color: Colors.grey[900],
+                                                fontSize: 30,
+                                                fontFamily: 'CormorantGaramond'),
+                                          );
+                                        }
+                                    )
+                                ),
                               ),
-                            ),
-                        /*
-                        Formats the food image
-                         */
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(0.0, 25.0, 0.0, 0.0),
-                          child: Container(
-                            height: 60,
-                            width: 100,
-                            child: Image.asset('assets/images/${food.imageUrl}', height:60, width: 100, fit: BoxFit.fitHeight,),
+                              /*
+                            Formats the food image
+                             */
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                    0.0, 25.0, 0.0, 0.0),
+                                child: Container(
+                                  height: SizeConfig.screenHeight!*1/12,
+                                  width: SizeConfig.screenWidth!*1/4,
+                                  child: Image.asset(
+                                    'assets/images/${food.imageUrl}',
+                                    height: SizeConfig.screenHeight!*1/12,
+                                    width: SizeConfig.screenWidth!*1/2,
+                                    fit: BoxFit.fitHeight,),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),],
-                        ),
-                         /*
-                            Generates the food's nutrition facts to the user
-                          */
-                         for(int index=0; index < amountOfNutritionValues;index++)
-                             Text(nutritionNames[index]+': '+food.nutritionValues[index].toString()+' '+nutritionUnits[index], style: TextStyle(fontSize: 20.0,  fontWeight: FontWeight.bold,),),
-                        const SizedBox(height: 50.0),
-                        Row(
+                          /*
+                                Generates the food's nutrition facts to the user
+                              */
+                          for(int index = 0; index <
+                              amountOfNutritionValues; index++)
+                            Text(nutritionNames[index] + ': ' + food
+                                .nutritionValues[index].toString() + ' ' +
+                                nutritionUnits[index], style: TextStyle(
+                              fontSize: 20.0, fontWeight: FontWeight.bold,),),
+                          const SizedBox(height: 50.0),
+                          Row(
 
-                          children: <Widget>[
-                            /*
-                               Creates user text field for input
-                             */
-                            Container(
-                              width: 200.0,
-                              child: TextField(
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(),
-                                hintText: 'Enter amount in cup(s)',
-                              ),
-                              selectionWidthStyle: BoxWidthStyle.tight,
-                              controller: addController,
-                              keyboardType: TextInputType.number,
-                            ),),
-                            /*
-                              Creates the add button for user
-                             */
-                            RaisedButton(
-                                child: Text('Add'),
-                                onPressed: () {
-                                try{addFood(double.parse(addController.text));}
-                                on FormatException {
-                                  setState(() {
+                            children: <Widget>[
+                              /*
+                                   Creates user text field for input
+                                 */
+                              Container(
+                                width: 200.0,
+                                child: FutureBuilder(
+                                  future: finished,
+                                  builder: (context, snapshot) {
+                                    return TextField(
+                                      decoration: const InputDecoration(
+                                        border: OutlineInputBorder(),
+                                        hintText: 'Enter amount in cup(s)',
+                                      ),
+                                      selectionWidthStyle: BoxWidthStyle.tight,
+                                      controller: addController,
+                                      keyboardType: TextInputType.number,
+                                    );
+                                  }
+                                ),),
+                              /*
+                                  Creates the add button for user
+                                 */
+                              RaisedButton(
+                                  child: Text('Add'),
+                                  onPressed: () {
+                                    try {
+                                      searchedTrue();
+                                      addFood(double.parse(addController.text));
+                                    }
+                                    on FormatException {
+                                      setState(() {
+                                        alert(context);
+                                      });
+                                    };
+                                    //addFood();
 
-                                    alert(context);
-                                  });
-                                };
-                              //addFood();
+                                  }),
 
-                              }),
-
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                    ),
-            ),
+                  ),
+                );
+              }
+              else if(snapshot.connectionState == ConnectionState.waiting){
+                return CircularProgressIndicator();
+              }
+              else{
+                return const Text("Empty data");
+              }
+            }
+
           ),
 
       );

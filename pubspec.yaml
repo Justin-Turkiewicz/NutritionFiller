@@ -1,4 +1,4 @@
-name: nutrtionfiller
+name: nutritionfiller
 description: A new Flutter project.
 
 # The following line prevents the package from being accidentally published to
@@ -38,6 +38,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   material_floating_search_bar: ^0.3.6
+  provider: ^6.0.2
 #  database: ^0.3.3
 
 

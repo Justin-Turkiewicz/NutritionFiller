@@ -1,7 +1,8 @@
 import 'dart:collection';
 import 'package:flutter/material.dart';
-import 'package:nutrtionfiller/model/food.dart';
-import 'package:nutrtionfiller/model/user.dart';
+import 'package:nutritionfiller/model/food.dart';
+import 'package:nutritionfiller/model/size_config.dart';
+import 'package:nutritionfiller/model/user.dart';
 /*
   This page displays the user's intake for each seperate nutrition value
  */
@@ -40,22 +41,27 @@ class _HomeState extends State<Home> {
   final List<double> DAILYVALUEPERCENTAGES = [2000.0, 78.0, 20.0, 300.0, 2300.0, 4700.0, 275.0, 28.0, 50.0, 50.0, 1300.0, 18.0, 11.0, 420.0, 1250.0, 900.0, 1.7, 2.4, 90.0, 15.0, 120.0];
   Queue<Food> lastFoodQueue = Queue<Food>();
   Queue<Food> foodAddedQueue = Queue<Food>();
+  Food lastFoodAdded = Food(name: "Brocolli", imageUrl: "broccoli.jpg", nutritionValues: [101.0, 5.74, 0.788, 0.0, 234.0, 260.0, 9.84, 5.51, 2.7, 5.7, 60.8, 1.14, 0.513, 24.7, 89.3, 93.1, 0.239, 0.0, 73.7, 3.08, 169.0]);
 
   /*
     Gets the food queue from the add_food page, if not empty changes
     the user's nutrition values and percentages
    */
   void retrieveData() async{
-    dynamic foodAdded = await Navigator.pushNamed(context, '/add_food');
+    dynamic foodAdded = await Navigator.pushNamed(context, '/add_food',
+    arguments: {'lastFoodAdded': lastFoodAdded});
       setState(() {
       userData = {
         'nutritionValues': foodAdded['nutritionValues'],
+        'lastFoodAdded': foodAdded['lastFoodAdded'],
       };
+      lastFoodAdded = foodAdded['lastFoodAdded'];
       foodAddedQueue = userData['nutritionValues'];
       if(foodAdded['nutritionValues'] != null) {
         editValues();
       }
       });
+
   }
 
   /*
@@ -118,14 +124,19 @@ class _HomeState extends State<Home> {
   }
   @override
   Widget build(BuildContext context) {
+    SizeConfig().init(context);
     return Scaffold(
         /*
           AppBar allows navigation to add_food page, clear user's data and remove last food from user data
          */
         appBar: AppBar(
           centerTitle: true,
+          titleSpacing: 1,
           backgroundColor: Colors.red[700],
-          title: Text('Your Progress', style: TextStyle(color: Color(0xff1b5e20)),),
+          title: Align(
+              child: const Text('Your Progress', style: TextStyle(color: Color(0xff1b5e20)),),
+              alignment: Alignment(-1.0, 0),
+          ),
           leading: Builder(
             builder: (BuildContext context){
               return IconButton(onPressed: () {
@@ -138,26 +149,29 @@ class _HomeState extends State<Home> {
               Creates clear button
              */
             Container(
-              width: 50,
+              width: SizeConfig.screenWidth!*1/6,
               child: Builder(builder: (BuildContext context) {
                 return IconButton(onPressed: () {
                   setState(() {
                     user = User(allNutritionNames: nutritionNames, allUnits: nutritionUnits, totalNutrition: emptyValues, percentages: emptyPercentages);
                   });
-                }, icon: Text('Clear', style: TextStyle(fontSize: 13),),);
+                }, icon: Align(
+                    child: const Text('Clear', style: TextStyle(fontSize: 14),),
+                    alignment: Alignment(-1.0, 0),
+                ),);
               }),
             ),
             /*
               Creates remove last food button
              */
             Container(
-              width: 100,
+              width: SizeConfig.screenWidth!*1/4,
               child: Builder(builder: (BuildContext context) {
                 return IconButton(onPressed: () {
                   setState(() {
                     removeLastFood();
                   });
-                }, icon: Text('Remove Last Food', style: TextStyle(fontSize: 13),),);
+                }, icon: Text('Remove Last Food', style: TextStyle(fontSize: 14),),);
               }),
             )
           ],

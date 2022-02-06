@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 /*
  User class stores user information from the food added
@@ -26,5 +28,28 @@ class User{
   List<String> getAllUnits() {return this.allUnits;}
   List<double> getTotalNutrition() {return this.totalNutrition;}
   List<double> getPercentages() {return this.percentages;}
+
+  factory User.fromJson(Map<String, dynamic> json){
+    final names = (json['allNutritionNames'].map<String>((name) => name as String).toList());
+    final units = (json['allUnits'].map<String>((name) => name as String).toList());
+    final nutrition = (json['totalNutrition'].map<double>((name) => name as double).toList());
+    final percentages = (json['percentages'].map<double>((name) => name as double).toList());
+    return User(
+      allNutritionNames: names,
+      allUnits: units,
+      totalNutrition: nutrition,
+      percentages: percentages
+    );
+
+
+
+
+  }
+  Map<String, dynamic> toJson() => {
+    'allNutritionNames': allNutritionNames,
+    'allUnits': allUnits,
+    'totalNutrition': totalNutrition,
+    'percentages': percentages,
+  };
 
 }

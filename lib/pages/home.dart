@@ -1,8 +1,11 @@
 import 'dart:collection';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:nutritionfiller/model/SharedPref.dart';
 import 'package:nutritionfiller/model/food.dart';
 import 'package:nutritionfiller/model/size_config.dart';
 import 'package:nutritionfiller/model/user.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 /*
   This page displays the user's intake for each seperate nutrition value
  */
@@ -42,7 +45,7 @@ class _HomeState extends State<Home> {
   Queue<Food> lastFoodQueue = Queue<Food>();
   Queue<Food> foodAddedQueue = Queue<Food>();
   Food lastFoodAdded = Food(name: "Brocolli", imageUrl: "broccoli.jpg", nutritionValues: [101.0, 5.74, 0.788, 0.0, 234.0, 260.0, 9.84, 5.51, 2.7, 5.7, 60.8, 1.14, 0.513, 24.7, 89.3, 93.1, 0.239, 0.0, 73.7, 3.08, 169.0]);
-
+  SharedPref pref = SharedPref();
   /*
     Gets the food queue from the add_food page, if not empty changes
     the user's nutrition values and percentages
@@ -120,11 +123,40 @@ class _HomeState extends State<Home> {
         }
       }
     }
-
+  }
+  Future<void> loadUser() async{
+    try{
+      User userLoaded = User.fromJson(await pref.read('user'));
+      setState(() {
+        user = userLoaded;
+      });
+    }catch(e) {
+      print("Exception $e");
+      setState(() {
+        alert(context);
+      });
+    }
+  }
+  Future alert(BuildContext context){
+    return showDialog(context: context, builder: (BuildContext context)
+    {
+      return AlertDialog(
+        title: const Text('No Previous Data Stored'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context, 'Ok');
+            },
+            child: const Text('Ok'),
+          ),
+        ],
+      );
+    });
   }
   @override
   Widget build(BuildContext context) {
     SizeConfig().init(context);
+    final ScrollController controller = new ScrollController();
     return Scaffold(
         /*
           AppBar allows navigation to add_food page, clear user's data and remove last food from user data
@@ -181,28 +213,57 @@ class _HomeState extends State<Home> {
         /*
           Builds the tiles for each nutrition type of the user
          */
-        body: ListView.builder(
-              itemCount: user.getTotalNutrition().length,
-              itemBuilder: (context, index){
-                return Padding(padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
-                  child: Card(
-                    child: ListTile(
-                        title: Text(user.getAllNutritionNames()[index]+': '+user.getTotalNutrition()[index].toString()+' '+user.getAllUnits()[index]),
-                        trailing: Wrap(
-                            spacing: 12.0,
-                            children: <Widget>[
-                              Text((user.getPercentages()[index]*100).round().toString()+'%'),
-                              Container(width: 150, child: LinearProgressIndicator(value: user.getPercentages()[index]>1.0 ? 1.0 : user.getPercentages()[index])),
+        body: SingleChildScrollView(
+          child: Column(
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  SizedBox(width: SizeConfig.screenWidth!*1/6),
+                  RaisedButton(
+                      onPressed: () {
+                        pref.save('user', user);
+                      },
+                      child: Text('Save', style: TextStyle(fontSize: 20)),
+                      ),
 
-
-                              ],),
+                  SizedBox(width: SizeConfig.screenWidth! *1/6),
+                  RaisedButton(
+                      onPressed: () async{
+                        await loadUser();
+                      },
+                    child: Text('Load', style: TextStyle(fontSize: 20)),
                     ),
+                  SizedBox(width: SizeConfig.screenWidth! * 1/6)
+                ],
+              ),
+              ListView.builder(
+                      physics: const ClampingScrollPhysics(),
+                      controller: controller,
+                      scrollDirection: Axis.vertical,
+                      shrinkWrap: true,
+                      itemCount: user.getTotalNutrition().length,
+                      itemBuilder: (context, index){
+                        return Padding(padding: const EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 0.0),
+                          child: Card(
+                            child: ListTile(
+                                title: Text(user.getAllNutritionNames()[index]+': '+user.getTotalNutrition()[index].toString()+' '+user.getAllUnits()[index]),
+                                trailing: Wrap(
+                                    spacing: 12.0,
+                                    children: <Widget>[
+                                      Text((user.getPercentages()[index]*100).round().toString()+'%'),
+                                      Container(width: 150, child: LinearProgressIndicator(value: user.getPercentages()[index]>1.0 ? 1.0 : user.getPercentages()[index])),
 
+
+                                      ],),
+                            ),
+
+                          ),
+                        );
+                      },
                   ),
-                );
-              },
-
+            ],
           ),
+        ),
 
 
 

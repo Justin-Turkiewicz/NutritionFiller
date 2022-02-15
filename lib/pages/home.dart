@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:nutritionfiller/model/SharedPref.dart';
 import 'package:nutritionfiller/model/food.dart';
 import 'package:nutritionfiller/model/size_config.dart';
@@ -98,6 +99,28 @@ class _HomeState extends State<Home> {
       user = User(allNutritionNames: nutritionNames, allUnits: nutritionUnits, totalNutrition: nutritionValues, percentages: percentages);
   }
 
+  Future<void> loadUser() async{
+    try{
+      User userLoaded = User.fromJson(await pref.read('user'));
+      List<String> stringList = await pref.readStringList('convertedQueue');
+      List<Food> foodList = stringList.map<Food>((name) => Food.fromJson(jsonDecode(name))).toList();
+      Queue<Food> foodQueue = Queue<Food>();
+      for (final food in foodList){
+          foodQueue.add(food);
+      }
+
+      //lastFoodQueue = Queue.castFrom<String, Food>();
+      setState(() {
+        user = userLoaded;
+        lastFoodQueue = foodQueue;
+      });
+    }catch(e) {
+      print("Exception $e");
+      setState(() {
+        alert(context);
+      });
+    }
+  }
   /*
     Removes last food based on the lastFoodQueue(First food in queue was the last food added)
    */
@@ -122,19 +145,6 @@ class _HomeState extends State<Home> {
               double.parse((user.getPercentages()[index]).toStringAsFixed(2));
         }
       }
-    }
-  }
-  Future<void> loadUser() async{
-    try{
-      User userLoaded = User.fromJson(await pref.read('user'));
-      setState(() {
-        user = userLoaded;
-      });
-    }catch(e) {
-      print("Exception $e");
-      setState(() {
-        alert(context);
-      });
     }
   }
   Future alert(BuildContext context){
@@ -185,6 +195,8 @@ class _HomeState extends State<Home> {
               child: Builder(builder: (BuildContext context) {
                 return IconButton(onPressed: () {
                   setState(() {
+                    emptyValues = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+                    emptyPercentages = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
                     user = User(allNutritionNames: nutritionNames, allUnits: nutritionUnits, totalNutrition: emptyValues, percentages: emptyPercentages);
                   });
                 }, icon: Align(
@@ -222,6 +234,9 @@ class _HomeState extends State<Home> {
                   RaisedButton(
                       onPressed: () {
                         pref.save('user', user);
+                        List<Food> convertedQueue = lastFoodQueue.toList();
+                        List<String> convertedStrings = convertedQueue.map<String>((name) => jsonEncode(name).toString()).toList();
+                        pref.saveStringList('convertedQueue', convertedStrings);
                       },
                       child: Text('Save', style: TextStyle(fontSize: 20)),
                       ),

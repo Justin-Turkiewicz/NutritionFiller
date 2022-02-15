@@ -13,7 +13,7 @@ class FoodFields{
     id, name, imageUrl, nutritionValues
   ];
 
-  static final String id = '_id';
+  static final String id = 'id';
   static final String name = 'name';
   static final String imageUrl = 'imageUrl';
   static final String nutritionValues = 'nutritionValues';
@@ -76,7 +76,7 @@ class Food{
   /*
     Creates json from String keys and object values
    */
-  Map<String, Object?> toJson() => {
+  Map<String, dynamic> toJson() => {
       FoodFields.id: id,
       FoodFields.name: name,
       FoodFields.imageUrl: imageUrl,

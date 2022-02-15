@@ -15,11 +15,12 @@ class User{
   List<String> allUnits;
   List<double> totalNutrition;
   List<double> percentages;
-
   /*
     Constructor for user
    */
   User({required this.allNutritionNames, required this.allUnits, required this.totalNutrition, required this.percentages});
+
+
 
   /*
     Getter methods for each attribute of the user
